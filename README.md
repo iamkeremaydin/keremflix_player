@@ -28,6 +28,15 @@ npm run dev
 
 3. Open `http://localhost:3000`, pick a local video, done.
 
+## Pull once, then go offline
+
+How to get a copy and work without internet after the first install:
+
+1. **While online:** `git clone` your repo (fork first on GitHub if you want), `cd` into it, then `npm install`. `package-lock.json` keeps versions steady; `npm ci` is the picky version of that.
+2. **Go offline:** run `npm run dev`, open `http://localhost:3000`, hack away. No network needed for normal edits once `node_modules` exists.
+3. **Online again when:** you add packages, upgrade deps, use a new machine, or `git pull` and the lock file changed (then `npm install` again).
+4. **Extras (all local):** `npm run build`, `npm run lint`.
+
 ## Quick start (if you are not into terminals)
 
 There is a `launch` folder with helpers. They use a **fixed port 3333** on purpose so we never chase Next when 3000 is already taken. The app URL is **`http://localhost:3333`**.
