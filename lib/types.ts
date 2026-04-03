@@ -11,6 +11,7 @@ export type PlayerError =
   | { type: "FILE_TOO_LARGE"; sizeMB: number }
   | { type: "DECODE_ERROR"; message: string }
   | { type: "REOPEN_UNAVAILABLE"; message: string }
+  | { type: "FILE_ACCESS_DENIED"; message: string }
   | { type: "UNKNOWN"; message: string };
 
 export interface PlayerState {

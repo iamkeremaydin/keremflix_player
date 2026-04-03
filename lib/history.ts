@@ -1,4 +1,5 @@
 import { clearAllFileHandles, deleteFileHandle } from "@/lib/file-handles";
+import { useHistoryStore } from "@/store/history-store";
 
 const STORAGE_KEY = "keremflix:history";
 const MAX_ENTRIES = 20;
@@ -53,6 +54,7 @@ export function addToHistory(file: File): void {
   // Remove existing entry for the same file, prepend new one, cap at MAX_ENTRIES
   const existing = read().filter((e) => e.id !== id);
   write([entry, ...existing].slice(0, MAX_ENTRIES));
+  useHistoryStore.getState().refresh();
 }
 
 export function getHistory(): HistoryEntry[] {
@@ -62,6 +64,7 @@ export function getHistory(): HistoryEntry[] {
 export function removeFromHistory(id: string): void {
   write(read().filter((e) => e.id !== id));
   void deleteFileHandle(id);
+  useHistoryStore.getState().refresh();
 }
 
 export function clearHistory(): void {
@@ -72,4 +75,5 @@ export function clearHistory(): void {
     // ignore
   }
   void clearAllFileHandles();
+  useHistoryStore.getState().refresh();
 }

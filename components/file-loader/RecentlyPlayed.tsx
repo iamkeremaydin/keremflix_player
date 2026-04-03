@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
-  getHistory,
   removeFromHistory,
   clearHistory,
   type HistoryEntry,
 } from "@/lib/history";
+import { useHistoryStore } from "@/store/history-store";
 
 interface RecentlyPlayedProps {
   onEntryOpen: (entry: HistoryEntry) => void | Promise<void>;
@@ -30,21 +30,23 @@ function formatFileSize(bytes: number): string {
 }
 
 export function RecentlyPlayed({ onEntryOpen }: RecentlyPlayedProps) {
-  const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  const entries = useHistoryStore((s) => s.entries);
+  const refresh = useHistoryStore((s) => s.refresh);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
-    setEntries(getHistory());
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  const handleRemove = useCallback((id: string) => {
-    removeFromHistory(id);
-    setEntries(getHistory());
-  }, []);
+  const handleRemove = useCallback(
+    (id: string) => {
+      removeFromHistory(id);
+    },
+    []
+  );
 
   const handleClearConfirmed = useCallback(() => {
     clearHistory();
-    setEntries([]);
     setShowClearConfirm(false);
   }, []);
 

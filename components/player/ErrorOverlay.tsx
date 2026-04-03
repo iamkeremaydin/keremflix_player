@@ -42,6 +42,12 @@ function getErrorDetails(error: PlayerError, extension: string) {
         body: error.message,
         suggestion: "",
       };
+    case "FILE_ACCESS_DENIED":
+      return {
+        title: "File access not granted",
+        body: error.message,
+        suggestion: "",
+      };
     case "UNKNOWN":
       return {
         title: "Playback Error",

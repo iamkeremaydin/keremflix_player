@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFileStore } from "@/store/file-store";
 import { loadProgress, clearProgress } from "@/lib/watch-history";
 import type { WatchProgress } from "@/lib/watch-history";
+import { play, seekTo } from "@/modules/player/engine";
 
 function formatTime(s: number): string {
   if (!isFinite(s) || s < 0) return "0:00";
@@ -36,10 +37,29 @@ export function ResumeModal({ videoRef }: Props) {
 
   const handleResume = () => {
     const video = videoRef.current;
-    if (video) {
-      video.currentTime = progress.time;
-    }
     setDismissed(true);
+    if (!video) return;
+
+    const target = progress.time;
+    const startPlayback = () => {
+      void play(video).catch(() => {
+        /* Autoplay/policy or transient error — user can press play */
+      });
+    };
+
+    if (Math.abs(video.currentTime - target) < 0.05) {
+      startPlayback();
+      return;
+    }
+
+    video.addEventListener(
+      "seeked",
+      () => {
+        startPlayback();
+      },
+      { once: true }
+    );
+    seekTo(video, target);
   };
 
   const handleStartOver = () => {

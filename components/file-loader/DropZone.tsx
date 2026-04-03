@@ -25,6 +25,9 @@ function ErrorBanner({ error }: { error: PlayerError }) {
   } else if (error.type === "REOPEN_UNAVAILABLE") {
     title = "Can't open from Recently Played";
     body = error.message;
+  } else if (error.type === "FILE_ACCESS_DENIED") {
+    title = "File access not granted";
+    body = error.message;
   } else if (error.type === "UNKNOWN") {
     title = "Unknown error";
     body = error.message;
@@ -43,6 +46,8 @@ export function DropZone() {
   const {
     isDraggingOver,
     loadError,
+    setLoadError,
+    permissionNotice,
     onDragOver,
     onDragLeave,
     onDrop,
@@ -71,8 +76,21 @@ export function DropZone() {
           ],
           multiple: false,
         });
-        const file = await handle.getFile();
-        loadFile(file, handle);
+        try {
+          const file = await handle.getFile();
+          loadFile(file, handle);
+        } catch (inner) {
+          const ie = inner as DOMException;
+          if (ie?.name === "NotFoundError") {
+            setLoadError({
+              type: "REOPEN_UNAVAILABLE",
+              message:
+                "That file is no longer where the browser expected it (moved or deleted). Try Browse again or pick the file from its new location.",
+            });
+            return;
+          }
+          throw inner;
+        }
       } catch (err) {
         const e = err as DOMException;
         if (e?.name === "AbortError") return;
@@ -81,7 +99,7 @@ export function DropZone() {
     } else {
       inputRef.current?.click();
     }
-  }, [loadFile]);
+  }, [loadFile, setLoadError]);
 
   return (
     <div
@@ -151,6 +169,12 @@ export function DropZone() {
       </button>
 
       {loadError && <ErrorBanner error={loadError} />}
+
+      {permissionNotice && (
+        <div className="mt-6 max-w-md mx-auto rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-center">
+          <p className="text-white/80 text-sm">{permissionNotice}</p>
+        </div>
+      )}
 
       <RecentlyPlayed onEntryOpen={openHistoryEntry} />
 
