@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+:root {
+  --player-accent: #e50914;
+  --player-accent-hover: #f40612;
+  --controls-height: 56px;
+  --gradient-bottom: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+  --gradient-top: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Seek bar custom track ─────────────────────────────────────────────────── */
+.seek-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  transition: height 0.15s ease;
+}
+
+.seek-input:hover {
+  height: 6px;
+}
+
+.seek-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  margin-top: -5px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.seek-input:hover::-webkit-slider-thumb,
+.seek-input:active::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.seek-input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Volume slider ─────────────────────────────────────────────────────────── */
+.volume-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.volume-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.volume-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Controls visibility ───────────────────────────────────────────────────── */
+.controls-hidden .controls-bar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+
+.controls-hidden .top-gradient {
+  opacity: 0;
+}
+
+.controls-hidden .bottom-gradient {
+  opacity: 0;
+}
+
+.controls-hidden {
+  cursor: none;
+}
+
+.controls-bar {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.top-gradient {
+  transition: opacity 0.3s ease;
+}
+
+.bottom-gradient {
+  transition: opacity 0.3s ease;
+}
+
+/* ── Spinner ───────────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 0.9s linear infinite;
+}
+
+/* ── Seek tooltip ─────────────────────────────────────────────────────────── */
+.seek-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── Thumbnail preview ─────────────────────────────────────────────────────── */
+.seek-thumbnail {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  transform: translateX(-50%);
+  width: 160px;
+  height: 90px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  background: #111;
+}
+
+/* ── Overlay panel ─────────────────────────────────────────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.overlay-panel {
+  animation: slideUp 0.2s ease;
+}
+
+/* ── Subtitle cue styling ──────────────────────────────────────────────────── */
+video::cue {
+  font-size: calc(1.3em * var(--subtitle-scale, 1));
+  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Error overlay ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.error-overlay {
+  animation: fadeIn 0.3s ease;
+}
