@@ -28,14 +28,15 @@ npm run dev
 
 3. Open `http://localhost:3000`, pick a local video, done.
 
-## Pull once, then go offline
+## Take it and make it yours (disconnect from this repo)
 
-How to get a copy and work without internet after the first install:
+If you like it and want your own version, you do not have to stay tied to this project’s remote. Roughly how:
 
-1. **While online:** `git clone` your repo (fork first on GitHub if you want), `cd` into it, then `npm install`. `package-lock.json` keeps versions steady; `npm ci` is the picky version of that.
-2. **Go offline:** run `npm run dev`, open `http://localhost:3000`, hack away. No network needed for normal edits once `node_modules` exists.
-3. **Online again when:** you add packages, upgrade deps, use a new machine, or `git pull` and the lock file changed (then `npm install` again).
-4. **Extras (all local):** `npm run build`, `npm run lint`.
+1. **Easiest:** fork it on GitHub, then `git clone` **your** fork. Your `origin` is yours; push and branch without needing anything from here.
+2. **Already cloned from here?** Point Git at your repo instead, for example `git remote set-url origin https://github.com/you/your-copy.git`, or `git remote remove origin` and `git remote add origin` with your URL. You can skip adding this repo again unless you want to pull updates sometimes (`upstream` is optional).
+3. **Then:** `npm install`, `npm run dev`, open `http://localhost:3000`, rename things, change copy, break stuff on purpose. `npm run build` and `npm run lint` work the same. Treat `package-lock.json` like any other Node project if you add packages.
+
+You are not signing up for anything by cloning. This is just a starting point you can walk away with.
 
 ## Quick start (if you are not into terminals)
 
