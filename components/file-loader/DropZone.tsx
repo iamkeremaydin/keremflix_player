@@ -3,6 +3,8 @@
 import { useRef, useCallback } from "react";
 import { useFileLoader } from "@/hooks/useFileLoader";
 import { RecentlyPlayed } from "@/components/file-loader/RecentlyPlayed";
+import { MediaPlaylistPanel } from "@/components/player/MediaPlaylistPanel";
+import { usePlaylistStore } from "@/store/playlist-store";
 import type { PlayerError } from "@/lib/types";
 import { getCodecSuggestion } from "@/lib/format-support";
 
@@ -43,6 +45,8 @@ function ErrorBanner({ error }: { error: PlayerError }) {
 
 export function DropZone() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const togglePlaylistPanel = usePlaylistStore((s) => s.togglePlaylistPanel);
+  const playlistOpen = usePlaylistStore((s) => s.playlistPanelOpen);
   const {
     isDraggingOver,
     loadError,
@@ -108,6 +112,24 @@ export function DropZone() {
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
+      <button
+        type="button"
+        onClick={togglePlaylistPanel}
+        className={[
+          "fixed top-4 right-4 z-50 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm text-sm transition-all",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+          playlistOpen ? "bg-white/20 text-white" : "bg-white/10 hover:bg-white/20 text-white/80 hover:text-white",
+        ].join(" ")}
+        aria-expanded={playlistOpen}
+        aria-controls="media-playlist-panel"
+        title="Music folder playlist"
+      >
+        <span aria-hidden className="text-base leading-none">
+          🎵
+        </span>
+        <span className="font-medium">Playlist</span>
+      </button>
+
       {/* Logo */}
       <div className="mb-12">
         <h1 className="text-5xl font-black tracking-tight text-white">
@@ -193,6 +215,9 @@ export function DropZone() {
         onChange={onFileInput}
         aria-hidden="true"
       />
+
+      {/* Fixed overlay — does not affect centered layout */}
+      <MediaPlaylistPanel />
     </div>
   );
 }

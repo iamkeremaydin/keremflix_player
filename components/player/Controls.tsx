@@ -72,13 +72,14 @@ export const Controls = memo(function Controls({
           type="button"
           onClick={togglePlaylistPanel}
           className={[
-            "px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+            "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
             playlistOpen ? "bg-white/20 text-white" : "text-white/80 hover:bg-white/10",
           ].join(" ")}
           aria-expanded={playlistOpen}
           aria-controls="media-playlist-panel"
-          title="Show or hide the playlist"
+          title="Show or hide music playlist"
         >
+          <span aria-hidden>🎵</span>
           Playlist
         </button>
         <SpeedSelector videoRef={videoRef} />

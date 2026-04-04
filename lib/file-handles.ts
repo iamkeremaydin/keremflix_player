@@ -8,10 +8,17 @@ import { createStore, get, set, del, clear } from "idb-keyval";
 
 const DB_NAME = "keremflix:file-handles";
 const STORE = "handles";
-const DIR_STORE = "playlist-directory";
+
+/**
+ * Playlist folder handle must live in its **own** IndexedDB database.
+ * idb-keyval only runs `createObjectStore` inside `onupgradeneeded`, which does not fire for an
+ * existing DB—so adding a second store name to `keremflix:file-handles` breaks for users who
+ * already had that DB with only `handles`.
+ */
+const PLAYLIST_DIR_DB_NAME = "keremflix:playlist-root";
 
 const fileHandleStore = createStore(DB_NAME, STORE);
-const playlistDirectoryStore = createStore(DB_NAME, DIR_STORE);
+const playlistDirectoryStore = createStore(PLAYLIST_DIR_DB_NAME, STORE);
 
 /** Key for the persisted playlist root folder (single entry in `playlistDirectoryStore`). */
 export const PLAYLIST_DIRECTORY_IDB_KEY = "keremflix:playlist-dir";
