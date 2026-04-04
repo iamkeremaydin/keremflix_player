@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import {
   ensureDirectoryReadPermission,
   putDirectoryHandle,
@@ -9,14 +9,21 @@ import { useFileLoader } from "@/hooks/useFileLoader";
 import { usePlaylistAutoplay } from "@/hooks/usePlaylistAutoplay";
 import { useFileStore } from "@/store/file-store";
 import { usePlaylistStore } from "@/store/playlist-store";
+import { PlaylistMiniPlayer } from "./PlaylistMiniPlayer";
 
 const HOVER_CLOSE_MS = 220;
 
-export function MediaPlaylistPanel() {
+interface MediaPlaylistPanelProps {
+  playlistVideoRef: RefObject<HTMLVideoElement | null>;
+}
+
+export function MediaPlaylistPanel({ playlistVideoRef }: MediaPlaylistPanelProps) {
   const { loadFile } = useFileLoader();
   usePlaylistAutoplay(loadFile);
 
   const fileName = useFileStore((s) => s.fileName);
+  const blobUrl = useFileStore((s) => s.blobUrl);
+  const playbackSource = useFileStore((s) => s.playbackSource);
   const folderLabel = usePlaylistStore((s) => s.folderLabel);
   const items = usePlaylistStore((s) => s.items);
   const status = usePlaylistStore((s) => s.status);
@@ -119,7 +126,7 @@ export function MediaPlaylistPanel() {
     async (handle: FileSystemFileHandle) => {
       try {
         const file = await handle.getFile();
-        loadFile(file, handle);
+        loadFile(file, handle, { skipHistory: true, playbackSource: "playlist" });
       } catch (e) {
         usePlaylistStore.setState({
           errorMessage:
@@ -142,6 +149,8 @@ export function MediaPlaylistPanel() {
         aria-hidden
         onMouseEnter={onEdgeStripEnter}
         onMouseLeave={onEdgeStripLeave}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
       />
 
       <div
@@ -157,6 +166,8 @@ export function MediaPlaylistPanel() {
         aria-hidden={!playlistPanelOpen}
         onMouseEnter={onPanelPointerEnter}
         onMouseLeave={onPanelPointerLeave}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
       >
         <div className="shrink-0 border-b border-white/10 px-4 py-3">
           <p
@@ -191,6 +202,10 @@ export function MediaPlaylistPanel() {
             Clear saved folder
           </button>
         </div>
+
+        {playbackSource === "playlist" && blobUrl ? (
+          <PlaylistMiniPlayer videoRef={playlistVideoRef} />
+        ) : null}
 
         {errorMessage ? (
           <div className="shrink-0 border-b border-white/10 px-4 py-2.5 text-xs leading-relaxed text-amber-100/95">

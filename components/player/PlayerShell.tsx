@@ -12,6 +12,7 @@ import { useFullscreen } from "@/hooks/useFullscreen";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useControlsVisibility } from "@/hooks/useControlsVisibility";
 import { useWatchHistory } from "@/hooks/useWatchHistory";
+import { usePlayerVideoBinding } from "@/hooks/usePlayer";
 import { useUIStore } from "@/store/ui-store";
 import { usePlayerStore } from "@/store/player-store";
 import { togglePlay } from "@/modules/player/engine";
@@ -22,12 +23,13 @@ import { SUPPORTED_VIDEO_EXTENSIONS } from "@/lib/constants";
 
 export function PlayerShell() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsVisible = useUIStore((s) => s.controlsVisible);
   const isLoading = usePlayerStore((s) => s.isLoading);
   const error = usePlayerStore((s) => s.error);
   const blobUrl = useFileStore((s) => s.blobUrl);
   const extension = useFileStore((s) => s.extension);
+  const playbackSource = useFileStore((s) => s.playbackSource);
   const duration = usePlayerStore((s) => s.duration);
 
   const [thumbnails, setThumbnails] = useState<Map<number, ImageBitmap>>(new Map());
@@ -35,31 +37,25 @@ export function PlayerShell() {
   const { toggleFullscreen } = useFullscreen(containerRef);
   const { onMouseMove, onMouseLeave } = useControlsVisibility();
 
-  // stableVideoRef is shared by keyboard hook, controls, watch-history, and resume modal
-  const stableVideoRef = useRef<HTMLVideoElement | null>(null);
+  usePlayerVideoBinding(videoRef);
+  useKeyboard(videoRef, toggleFullscreen, playbackSource === "main");
+  useWatchHistory(videoRef);
 
-  useKeyboard(stableVideoRef, toggleFullscreen);
-  useWatchHistory(stableVideoRef);
-
-  const handleVideoRef = useCallback((el: HTMLVideoElement | null) => {
-    videoElRef.current = el;
-    stableVideoRef.current = el;
-  }, []);
-
-  // Double-click = fullscreen
+  // Double-click = fullscreen (theater only)
   const handleDoubleClick = useCallback(() => {
-    toggleFullscreen();
-  }, [toggleFullscreen]);
+    if (playbackSource !== "main") return;
+    void toggleFullscreen();
+  }, [playbackSource, toggleFullscreen]);
 
-  // Single click on video area = play/pause
+  // Single click on video area = play/pause (theater only)
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
-      // Only trigger on the video surface itself, not controls
+      if (playbackSource !== "main") return;
       if ((e.target as HTMLElement).closest(".controls-bar")) return;
-      const video = videoElRef.current;
-      if (video) togglePlay(video);
+      const video = videoRef.current;
+      if (video) void togglePlay(video);
     },
-    []
+    [playbackSource]
   );
 
   // Close overlays when clicking outside
@@ -77,9 +73,9 @@ export function PlayerShell() {
     return () => document.removeEventListener("mousedown", closeOverlays);
   }, []);
 
-  // Generate thumbnails when file and duration are ready (video-like extensions only)
+  // Generate thumbnails when file and duration are ready (theater only)
   useEffect(() => {
-    if (!blobUrl || duration <= 0) return;
+    if (playbackSource !== "main" || !blobUrl || duration <= 0) return;
     if (!SUPPORTED_VIDEO_EXTENSIONS.includes(extension as (typeof SUPPORTED_VIDEO_EXTENSIONS)[number])) {
       return;
     }
@@ -102,7 +98,6 @@ export function PlayerShell() {
         const { type, timestamp, bitmap } = e.data;
         if (type === "frame") {
           newMap.set(Math.round(timestamp), bitmap);
-          // Update state incrementally
           setThumbnails(new Map(newMap));
         } else if (type === "done") {
           worker?.terminate();
@@ -123,7 +118,7 @@ export function PlayerShell() {
     }
 
     return () => worker?.terminate();
-  }, [blobUrl, duration, extension]);
+  }, [blobUrl, duration, extension, playbackSource]);
 
   return (
     <div
@@ -137,38 +132,31 @@ export function PlayerShell() {
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Video */}
-      <VideoSurface onVideoRef={handleVideoRef} />
+      {playbackSource === "main" ? <VideoSurface videoRef={videoRef} /> : null}
 
-      {/* Gradient overlays */}
       <GradientOverlay />
 
-      {/* Top bar: file info (fades with controls) */}
       {!error && (
         <div className="controls-bar absolute inset-x-0 top-0 z-20 flex items-start px-4 pt-4 pointer-events-none">
           <FileInfo />
         </div>
       )}
 
-      {/* Resume modal — shown once if saved progress exists for this file */}
-      {!error && <ResumeModal videoRef={stableVideoRef} />}
+      {!error && <ResumeModal videoRef={videoRef} />}
 
-      {/* Loading spinner */}
       <LoadingSpinner />
 
-      {/* Error overlay */}
       <ErrorOverlay />
 
-      {/* Controls */}
-      {!error && (
+      {!error && playbackSource === "main" && (
         <Controls
-          videoRef={stableVideoRef}
+          videoRef={videoRef}
           toggleFullscreen={toggleFullscreen}
           thumbnails={thumbnails.size > 0 ? thumbnails : undefined}
         />
       )}
 
-      {!error && <MediaPlaylistPanel />}
+      {!error && <MediaPlaylistPanel playlistVideoRef={videoRef} />}
     </div>
   );
 }

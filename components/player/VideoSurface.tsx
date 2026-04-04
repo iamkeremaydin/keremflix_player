@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, memo, useCallback } from "react";
-import { usePlayer } from "@/hooks/usePlayer";
+import { useEffect, useRef, memo, useCallback, type RefObject } from "react";
 import { useFileStore } from "@/store/file-store";
 import { usePlayerStore } from "@/store/player-store";
 import { useUIStore } from "@/store/ui-store";
@@ -26,11 +25,10 @@ function computeSubtitleBasePx(video: HTMLVideoElement): number {
 }
 
 interface Props {
-  onVideoRef?: (el: HTMLVideoElement | null) => void;
+  videoRef: RefObject<HTMLVideoElement | null>;
 }
 
-export const VideoSurface = memo(function VideoSurface({ onVideoRef }: Props) {
-  const videoRef = usePlayer();
+export const VideoSurface = memo(function VideoSurface({ videoRef }: Props) {
   const blobUrl = useFileStore((s) => s.blobUrl);
   const subtitleTracks = useFileStore((s) => s.subtitleTracks);
   const volume = usePlayerStore((s) => s.volume);
@@ -38,10 +36,6 @@ export const VideoSurface = memo(function VideoSurface({ onVideoRef }: Props) {
   const playbackRate = usePlayerStore((s) => s.playbackRate);
   const controlsVisible = useUIStore((s) => s.controlsVisible);
   const subtitleSize = useUIStore((s) => s.subtitleSize);
-
-  useEffect(() => {
-    onVideoRef?.(videoRef.current);
-  }, [onVideoRef, videoRef]);
 
   // Sync volume/rate changes from store back to element (for keyboard control)
   useEffect(() => {

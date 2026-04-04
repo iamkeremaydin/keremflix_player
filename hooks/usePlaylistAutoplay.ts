@@ -4,8 +4,13 @@ import { useEffect, useRef } from "react";
 import { usePlayerStore } from "@/store/player-store";
 import { useFileStore } from "@/store/file-store";
 import { usePlaylistStore } from "@/store/playlist-store";
+import type { LoadFileOptions } from "@/hooks/useFileLoader";
 
-type LoadFile = (file: File, fileHandle?: FileSystemFileHandle) => void;
+type LoadFile = (
+  file: File,
+  fileHandle?: FileSystemFileHandle,
+  options?: LoadFileOptions
+) => void;
 
 /**
  * When playback ends, load the next file in the sorted playlist (if any).
@@ -34,7 +39,7 @@ export function usePlaylistAutoplay(loadFile: LoadFile) {
     void (async () => {
       try {
         const file = await next.handle.getFile();
-        loadFile(file, next.handle);
+        loadFile(file, next.handle, { skipHistory: true, playbackSource: "playlist" });
       } catch (e) {
         usePlaylistStore.setState({
           status: "error",

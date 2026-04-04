@@ -2,6 +2,7 @@
 
 import { useRef, useCallback } from "react";
 import { useFileLoader } from "@/hooks/useFileLoader";
+import { usePlayerVideoBinding } from "@/hooks/usePlayer";
 import { RecentlyPlayed } from "@/components/file-loader/RecentlyPlayed";
 import { MediaPlaylistPanel } from "@/components/player/MediaPlaylistPanel";
 import { usePlaylistStore } from "@/store/playlist-store";
@@ -45,6 +46,8 @@ function ErrorBanner({ error }: { error: PlayerError }) {
 
 export function DropZone() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const playlistVideoRef = useRef<HTMLVideoElement | null>(null);
+  usePlayerVideoBinding(playlistVideoRef);
   const togglePlaylistPanel = usePlaylistStore((s) => s.togglePlaylistPanel);
   const playlistOpen = usePlaylistStore((s) => s.playlistPanelOpen);
   const {
@@ -217,7 +220,7 @@ export function DropZone() {
       />
 
       {/* Fixed overlay — does not affect centered layout */}
-      <MediaPlaylistPanel />
+      <MediaPlaylistPanel playlistVideoRef={playlistVideoRef} />
     </div>
   );
 }

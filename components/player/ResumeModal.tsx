@@ -21,19 +21,22 @@ interface Props {
 
 export function ResumeModal({ videoRef }: Props) {
   const file = useFileStore((s) => s.file);
+  const playbackSource = useFileStore((s) => s.playbackSource);
   const [progress, setProgress] = useState<WatchProgress | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  // Check for saved progress once when the file is loaded
   useEffect(() => {
-    if (!file) return;
+    if (!file || playbackSource !== "main") {
+      setProgress(null);
+      setDismissed(false);
+      return;
+    }
     setDismissed(false);
     const saved = loadProgress(file);
-    // Only show the modal if there's a meaningful saved position (> 3 s)
     setProgress(saved && saved.time > 3 ? saved : null);
-  }, [file]);
+  }, [file, playbackSource]);
 
-  if (!progress || dismissed) return null;
+  if (playbackSource !== "main" || !progress || dismissed) return null;
 
   const handleResume = () => {
     const video = videoRef.current;

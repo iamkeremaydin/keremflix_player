@@ -20,7 +20,8 @@ import {
 
 export function useKeyboard(
   videoRef: React.RefObject<HTMLVideoElement | null>,
-  toggleFullscreen: () => void
+  toggleFullscreen: () => void,
+  enableFullscreenHotkey = true
 ) {
   const show = useCallback(() => {
     useUIStore.getState().setControlsVisible(true);
@@ -90,6 +91,7 @@ export function useKeyboard(
 
         case "f":
         case "F":
+          if (!enableFullscreenHotkey) break;
           e.preventDefault();
           toggleFullscreen();
           break;
@@ -129,5 +131,5 @@ export function useKeyboard(
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [videoRef, toggleFullscreen, show]);
+  }, [videoRef, toggleFullscreen, show, enableFullscreenHotkey]);
 }

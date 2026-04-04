@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { validatePlaybackFile } from "@/modules/file-system/file-validator";
 import { createSource } from "@/modules/player/source-manager";
 import { useFileStore } from "@/store/file-store";
@@ -14,8 +14,14 @@ function isNotFoundError(e: unknown): boolean {
   return e instanceof DOMException && e.name === "NotFoundError";
 }
 
+export type LoadFileOptions = {
+  skipHistory?: boolean;
+  playbackSource?: "main" | "playlist";
+};
+
 export function useFileLoader() {
   const router = useRouter();
+  const pathname = usePathname();
   const setFile = useFileStore((s) => s.setFile);
   const resetPlayer = usePlayerStore((s) => s.reset);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -23,7 +29,7 @@ export function useFileLoader() {
   const [permissionNotice, setPermissionNotice] = useState<string | null>(null);
 
   const loadFile = useCallback(
-    (file: File, fileHandle?: FileSystemFileHandle) => {
+    (file: File, fileHandle?: FileSystemFileHandle, options?: LoadFileOptions) => {
       setLoadError(null);
       setPermissionNotice(null);
       const result = validatePlaybackFile(file);
@@ -35,14 +41,19 @@ export function useFileLoader() {
 
       resetPlayer();
       const blobUrl = createSource(file);
-      setFile(file, blobUrl);
-      addToHistory(file);
-      if (fileHandle) {
-        void putFileHandle(historyEntryId(file), fileHandle);
+      const playbackSource = options?.playbackSource ?? "main";
+      setFile(file, blobUrl, { playbackSource });
+      if (!options?.skipHistory) {
+        addToHistory(file);
+        if (fileHandle) {
+          void putFileHandle(historyEntryId(file), fileHandle);
+        }
       }
-      router.push("/player");
+      if (playbackSource === "main" && pathname !== "/player") {
+        router.push("/player");
+      }
     },
-    [router, setFile, resetPlayer]
+    [pathname, router, setFile, resetPlayer]
   );
 
   const openHistoryEntry = useCallback(

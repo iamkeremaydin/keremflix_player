@@ -13,11 +13,12 @@ const AUTOSAVE_INTERVAL_MS = 5000;
  */
 export function useWatchHistory(videoRef: React.RefObject<HTMLVideoElement | null>) {
   const file = useFileStore((s) => s.file);
+  const playbackSource = useFileStore((s) => s.playbackSource);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Auto-save on a fixed interval while playing
   useEffect(() => {
-    if (!file) return;
+    if (!file || playbackSource !== "main") return;
 
     const startInterval = () => {
       if (intervalRef.current) return;
@@ -64,11 +65,11 @@ export function useWatchHistory(videoRef: React.RefObject<HTMLVideoElement | nul
       video.removeEventListener("ended", onPauseOrEnd);
       stopInterval();
     };
-  }, [file, videoRef]);
+  }, [file, playbackSource, videoRef]);
 
   // Also save on page unload/visibility change
   useEffect(() => {
-    if (!file) return;
+    if (!file || playbackSource !== "main") return;
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         const video = videoRef.current;
@@ -77,21 +78,24 @@ export function useWatchHistory(videoRef: React.RefObject<HTMLVideoElement | nul
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [file, videoRef]);
+  }, [file, playbackSource, videoRef]);
 
   // Save on hard browser/tab close (beforeunload may not fire on mobile, but covers desktop)
   useEffect(() => {
-    if (!file) return;
+    if (!file || playbackSource !== "main") return;
     const onBeforeUnload = () => {
       const video = videoRef.current;
       if (video) saveProgress(file, video.currentTime, video.duration);
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [file, videoRef]);
+  }, [file, playbackSource, videoRef]);
 
   return {
-    getSavedProgress: (): WatchProgress | null => (file ? loadProgress(file) : null),
-    clearSavedProgress: () => { if (file) clearProgress(file); },
+    getSavedProgress: (): WatchProgress | null =>
+      file && playbackSource === "main" ? loadProgress(file) : null,
+    clearSavedProgress: () => {
+      if (file && playbackSource === "main") clearProgress(file);
+    },
   };
 }

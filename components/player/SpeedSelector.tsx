@@ -18,7 +18,7 @@ export const SpeedSelector = memo(function SpeedSelector({ videoRef }: Props) {
   const isOpen = activeOverlay === "speed";
 
   const select = (rate: number) => {
-    // Write directly to the DOM element — the ratechange listener in usePlayer
+    // Write directly to the DOM element — the ratechange listener in usePlayerVideoBinding
     // will update the store. Use setActiveOverlay (not toggleOverlay) so the
     // mousedown-triggered close doesn't reopen the panel on the subsequent click.
     const video = videoRef.current;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useLayoutEffect, useRef, useCallback, type RefObject } from "react";
 import { usePlayerStore } from "@/store/player-store";
 import { getBufferedRanges } from "@/modules/player/engine";
 import { classifyVideoError } from "@/modules/player/codec-detect";
@@ -8,10 +8,9 @@ import { useFileStore } from "@/store/file-store";
 
 /**
  * Binds HTMLVideoElement events to the Zustand player store.
- * Returns a ref to attach to the <video> element.
+ * Pass the same ref you attach to the active &lt;video&gt; (main or playlist mini-player).
  */
-export function usePlayer() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+export function usePlayerVideoBinding(videoRef: RefObject<HTMLVideoElement | null>) {
   const rvfcRef = useRef<number | null>(null);
   const frameCountRef = useRef(0);
   const frameTimeRef = useRef(0);
@@ -28,36 +27,38 @@ export function usePlayer() {
   } = usePlayerStore();
 
   const extension = useFileStore((s) => s.extension);
+  const blobUrl = useFileStore((s) => s.blobUrl);
 
   const syncBuffered = useCallback((video: HTMLVideoElement) => {
     setBufferedRanges(getBufferedRanges(video));
   }, [setBufferedRanges]);
 
-  // Use requestVideoFrameCallback for accurate time updates if available
-  const startRVFC = useCallback((video: HTMLVideoElement) => {
-    if (!("requestVideoFrameCallback" in video)) return;
+  const startRVFC = useCallback(
+    (video: HTMLVideoElement) => {
+      if (!("requestVideoFrameCallback" in video)) return;
 
-    const loop = (_: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
-      setCurrentTime(meta.mediaTime);
+      const loop = (_: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
+        setCurrentTime(meta.mediaTime);
 
-      // Estimate FPS over a rolling window
-      frameCountRef.current++;
-      if (frameTimeRef.current === 0) {
-        frameTimeRef.current = meta.presentationTime;
-      }
-      const elapsed = meta.presentationTime - frameTimeRef.current;
-      if (elapsed > 1000 && frameCountRef.current > 5) {
-        const fps = Math.round((frameCountRef.current * 1000) / elapsed);
-        if (fps > 0 && fps <= 120) setFps(fps);
-        frameCountRef.current = 0;
-        frameTimeRef.current = meta.presentationTime;
-      }
+        frameCountRef.current++;
+        if (frameTimeRef.current === 0) {
+          frameTimeRef.current = meta.presentationTime;
+        }
+        const elapsed = meta.presentationTime - frameTimeRef.current;
+        if (elapsed > 1000 && frameCountRef.current > 5) {
+          const fps = Math.round((frameCountRef.current * 1000) / elapsed);
+          if (fps > 0 && fps <= 120) setFps(fps);
+          frameCountRef.current = 0;
+          frameTimeRef.current = meta.presentationTime;
+        }
+
+        rvfcRef.current = video.requestVideoFrameCallback(loop);
+      };
 
       rvfcRef.current = video.requestVideoFrameCallback(loop);
-    };
-
-    rvfcRef.current = video.requestVideoFrameCallback(loop);
-  }, [setCurrentTime, setFps]);
+    },
+    [setCurrentTime, setFps]
+  );
 
   const stopRVFC = useCallback((video: HTMLVideoElement) => {
     if (rvfcRef.current !== null && "cancelVideoFrameCallback" in video) {
@@ -66,7 +67,7 @@ export function usePlayer() {
     }
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
@@ -74,7 +75,6 @@ export function usePlayer() {
       setDuration(video.duration);
       setIsLoading(false);
       setError(null);
-      // Re-apply stored playbackRate — browsers reset to 1 when a new src is assigned.
       const { playbackRate } = usePlayerStore.getState();
       if (playbackRate !== 1) video.playbackRate = playbackRate;
     };
@@ -88,7 +88,6 @@ export function usePlayer() {
       stopRVFC(video);
     };
     const onTimeUpdate = () => {
-      // Fallback for browsers without rVFC
       const hasRVFC = "requestVideoFrameCallback" in (video as HTMLVideoElement);
       if (!hasRVFC) {
         setCurrentTime((video as HTMLVideoElement).currentTime);
@@ -142,7 +141,9 @@ export function usePlayer() {
       stopRVFC(video);
     };
   }, [
+    blobUrl,
     extension,
+    videoRef,
     setPlaying,
     setCurrentTime,
     setDuration,
@@ -154,6 +155,5 @@ export function usePlayer() {
     startRVFC,
     stopRVFC,
   ]);
-
-  return videoRef;
 }
+
