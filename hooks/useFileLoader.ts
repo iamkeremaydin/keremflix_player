@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { validateVideoFile } from "@/modules/file-system/file-validator";
+import { validatePlaybackFile } from "@/modules/file-system/file-validator";
 import { createSource } from "@/modules/player/source-manager";
 import { useFileStore } from "@/store/file-store";
 import { usePlayerStore } from "@/store/player-store";
@@ -26,7 +26,7 @@ export function useFileLoader() {
     (file: File, fileHandle?: FileSystemFileHandle) => {
       setLoadError(null);
       setPermissionNotice(null);
-      const result = validateVideoFile(file);
+      const result = validatePlaybackFile(file);
 
       if (!result.ok) {
         setLoadError(result.error);

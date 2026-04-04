@@ -29,6 +29,12 @@ export const UNSUPPORTED_NATIVE_EXTENSIONS = ["mkv", "flv", "wmv", "ts", "m2ts"]
 // Subtitle file extensions we can parse
 export const SUPPORTED_SUBTITLE_EXTENSIONS = ["srt", "vtt"] as const;
 
+/** Media types listed in the folder playlist (non-recursive, by file name). */
+export const PLAYLIST_MEDIA_EXTENSIONS = ["mp3", "mp4", "m4a", "webm"] as const;
+
+/** Stop scanning a folder after this many playable files to avoid UI freezes. */
+export const MAX_PLAYLIST_SCAN_FILES = 500;
+
 // Warning threshold for large files (in bytes, 4 GB)
 export const LARGE_FILE_THRESHOLD = 4 * 1024 * 1024 * 1024;
 

@@ -17,6 +17,8 @@ import { usePlayerStore } from "@/store/player-store";
 import { togglePlay } from "@/modules/player/engine";
 import { THUMBNAIL_INTERVAL, THUMBNAIL_MAX_COUNT } from "@/lib/constants";
 import { useFileStore } from "@/store/file-store";
+import { MediaPlaylistPanel } from "./MediaPlaylistPanel";
+import { SUPPORTED_VIDEO_EXTENSIONS } from "@/lib/constants";
 
 export function PlayerShell() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,7 @@ export function PlayerShell() {
   const isLoading = usePlayerStore((s) => s.isLoading);
   const error = usePlayerStore((s) => s.error);
   const blobUrl = useFileStore((s) => s.blobUrl);
+  const extension = useFileStore((s) => s.extension);
   const duration = usePlayerStore((s) => s.duration);
 
   const [thumbnails, setThumbnails] = useState<Map<number, ImageBitmap>>(new Map());
@@ -74,9 +77,12 @@ export function PlayerShell() {
     return () => document.removeEventListener("mousedown", closeOverlays);
   }, []);
 
-  // Generate thumbnails when file and duration are ready
+  // Generate thumbnails when file and duration are ready (video-like extensions only)
   useEffect(() => {
     if (!blobUrl || duration <= 0) return;
+    if (!SUPPORTED_VIDEO_EXTENSIONS.includes(extension as (typeof SUPPORTED_VIDEO_EXTENSIONS)[number])) {
+      return;
+    }
 
     const count = Math.min(
       Math.floor(duration / THUMBNAIL_INTERVAL),
@@ -117,7 +123,7 @@ export function PlayerShell() {
     }
 
     return () => worker?.terminate();
-  }, [blobUrl, duration]);
+  }, [blobUrl, duration, extension]);
 
   return (
     <div
@@ -161,6 +167,8 @@ export function PlayerShell() {
           thumbnails={thumbnails.size > 0 ? thumbnails : undefined}
         />
       )}
+
+      {!error && <MediaPlaylistPanel />}
     </div>
   );
 }

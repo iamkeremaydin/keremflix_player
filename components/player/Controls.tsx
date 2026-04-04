@@ -10,6 +10,7 @@ import { SubtitleButton } from "./SubtitleButton";
 import { PipButton } from "./PipButton";
 import { FullscreenButton } from "./FullscreenButton";
 import { seekBy } from "@/modules/player/engine";
+import { usePlaylistStore } from "@/store/playlist-store";
 
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -22,6 +23,9 @@ export const Controls = memo(function Controls({
   toggleFullscreen,
   thumbnails,
 }: Props) {
+  const togglePlaylistPanel = usePlaylistStore((s) => s.togglePlaylistPanel);
+  const playlistOpen = usePlaylistStore((s) => s.playlistPanelOpen);
+
   return (
     <div className="controls-bar absolute inset-x-0 bottom-0 z-20 px-4 pb-4 pt-2">
       {/* Seek bar row */}
@@ -64,6 +68,19 @@ export const Controls = memo(function Controls({
         <div className="flex-1" />
 
         {/* Right group */}
+        <button
+          type="button"
+          onClick={togglePlaylistPanel}
+          className={[
+            "px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+            playlistOpen ? "bg-white/20 text-white" : "text-white/80 hover:bg-white/10",
+          ].join(" ")}
+          aria-expanded={playlistOpen}
+          aria-controls="media-playlist-panel"
+          title="Show or hide the playlist"
+        >
+          Playlist
+        </button>
         <SpeedSelector videoRef={videoRef} />
         <SubtitleButton videoRef={videoRef} />
         <PipButton videoRef={videoRef} />
