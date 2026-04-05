@@ -4,14 +4,37 @@ import { useCallback, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { validatePlaybackFile } from "@/modules/file-system/file-validator";
 import { createSource } from "@/modules/player/source-manager";
+import { parseMediaMetadata, tagsToCoverObjectUrl } from "@/lib/media-metadata";
 import { useFileStore } from "@/store/file-store";
 import { usePlayerStore } from "@/store/player-store";
+import { usePlaylistStore } from "@/store/playlist-store";
 import { addToHistory, historyEntryId, type HistoryEntry } from "@/lib/history";
 import { deleteFileHandle, getFileHandle, putFileHandle } from "@/lib/file-handles";
 import type { PlayerError } from "@/lib/types";
 
 function isNotFoundError(e: unknown): boolean {
   return e instanceof DOMException && e.name === "NotFoundError";
+}
+
+function applyFileMetadata(file: File) {
+  void (async () => {
+    try {
+      const tags = await parseMediaMetadata(file);
+      const coverObjectUrl = tagsToCoverObjectUrl(tags);
+      useFileStore.getState().setTrackDisplay({
+        trackTitle: tags.title,
+        trackArtist: tags.artist,
+        trackAlbum: tags.album,
+        coverObjectUrl,
+      });
+      usePlaylistStore.getState().setItemMetadata(file.name, {
+        title: tags.title,
+        artist: tags.artist,
+      });
+    } catch {
+      // leave display fields as set by setFile
+    }
+  })();
 }
 
 export type LoadFileOptions = {
@@ -43,6 +66,7 @@ export function useFileLoader() {
       const blobUrl = createSource(file);
       const playbackSource = options?.playbackSource ?? "main";
       setFile(file, blobUrl, { playbackSource });
+      applyFileMetadata(file);
       if (!options?.skipHistory) {
         addToHistory(file);
         if (fileHandle) {

@@ -6,10 +6,21 @@ import {
 } from "@/lib/file-handles";
 import { isPlaylistMediaFile } from "@/modules/file-system/file-validator";
 import { MAX_PLAYLIST_SCAN_FILES } from "@/lib/constants";
+import {
+  sequentialOrder,
+  shuffleArray,
+  shuffleOrderWithFirst,
+  type RepeatMode,
+} from "@/lib/playlist-order";
+import { useFileStore } from "@/store/file-store";
 
 export type PlaylistItem = { name: string; handle: FileSystemFileHandle };
 
 export type PlaylistStatus = "idle" | "loading" | "ready" | "error";
+
+export type { RepeatMode };
+
+export type PlaylistItemMeta = { title: string | null; artist: string | null };
 
 function isNotFoundError(e: unknown): boolean {
   return e instanceof DOMException && e.name === "NotFoundError";
@@ -33,6 +44,13 @@ function playlistFolderErrorMessage(e: unknown): string {
   return "Folder unavailable. Try choosing the folder again.";
 }
 
+const emptyQueueState = {
+  order: [] as number[],
+  shuffle: false,
+  repeatMode: "off" as RepeatMode,
+  itemMetadata: {} as Record<string, PlaylistItemMeta>,
+};
+
 interface PlaylistStore {
   folderLabel: string;
   items: PlaylistItem[];
@@ -41,8 +59,17 @@ interface PlaylistStore {
   limitNotice: string | null;
   playlistPanelOpen: boolean;
 
+  repeatMode: RepeatMode;
+  shuffle: boolean;
+  /** Permutation of indices into `items` for playback order */
+  order: number[];
+  itemMetadata: Record<string, PlaylistItemMeta>;
+
   setPlaylistPanelOpen: (open: boolean) => void;
   togglePlaylistPanel: () => void;
+  cycleRepeat: () => void;
+  toggleShuffle: () => void;
+  setItemMetadata: (fileName: string, meta: PlaylistItemMeta) => void;
 
   refreshFromHandle: (dir: FileSystemDirectoryHandle) => Promise<void>;
   hydrateFromStorage: () => Promise<void>;
@@ -57,10 +84,37 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
   errorMessage: null,
   limitNotice: null,
   playlistPanelOpen: false,
+  ...emptyQueueState,
 
   setPlaylistPanelOpen: (open) => set({ playlistPanelOpen: open }),
 
   togglePlaylistPanel: () => set((s) => ({ playlistPanelOpen: !s.playlistPanelOpen })),
+
+  cycleRepeat: () =>
+    set((s) => ({
+      repeatMode: s.repeatMode === "off" ? "all" : s.repeatMode === "all" ? "one" : "off",
+    })),
+
+  toggleShuffle: () => {
+    const { items, shuffle } = get();
+    const n = items.length;
+    if (n === 0) return;
+    if (shuffle) {
+      set({ shuffle: false, order: sequentialOrder(n) });
+      return;
+    }
+    const { fileName, playbackSource } = useFileStore.getState();
+    const curIdx =
+      playbackSource === "playlist" ? items.findIndex((i) => i.name === fileName) : -1;
+    const newOrder =
+      curIdx >= 0 ? shuffleOrderWithFirst(curIdx, n) : shuffleArray(sequentialOrder(n));
+    set({ shuffle: true, order: newOrder });
+  },
+
+  setItemMetadata: (fileName, meta) =>
+    set((s) => ({
+      itemMetadata: { ...s.itemMetadata, [fileName]: meta },
+    })),
 
   resetError: () => set({ errorMessage: null }),
 
@@ -85,6 +139,10 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
           status: "error",
           errorMessage: playlistFolderErrorMessage(e),
           limitNotice: null,
+          order: [],
+          shuffle: false,
+          repeatMode: "off",
+          itemMetadata: {},
         });
         return;
       }
@@ -97,6 +155,10 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
         limitNotice: limitReached
           ? `Showing the first ${MAX_PLAYLIST_SCAN_FILES} media files. Subfolders are not scanned.`
           : null,
+        order: sequentialOrder(items.length),
+        shuffle: false,
+        repeatMode: "off",
+        itemMetadata: {},
       });
     } catch (e) {
       set({
@@ -104,6 +166,10 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
         status: "error",
         errorMessage: playlistFolderErrorMessage(e),
         limitNotice: null,
+        order: [],
+        shuffle: false,
+        repeatMode: "off",
+        itemMetadata: {},
       });
     }
   },
@@ -113,7 +179,12 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
     try {
       const handle = await getDirectoryHandle();
       if (!handle) {
-        set({ status: "idle", items: [], folderLabel: "" });
+        set({
+          status: "idle",
+          items: [],
+          folderLabel: "",
+          ...emptyQueueState,
+        });
         return;
       }
 
@@ -126,6 +197,7 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
           folderLabel: handle.name,
           items: [],
           errorMessage: playlistFolderErrorMessage(e),
+          ...emptyQueueState,
         });
         return;
       }
@@ -139,6 +211,7 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
             perm === "denied"
               ? "Folder unavailable. Read access was denied—use Open folder and allow access, or clear the saved folder."
               : "Folder unavailable. Could not verify folder access.",
+          ...emptyQueueState,
         });
         return;
       }
@@ -154,6 +227,7 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
         folderLabel: "",
         errorMessage: playlistFolderErrorMessage(e),
         limitNotice: null,
+        ...emptyQueueState,
       });
     }
   },
@@ -166,6 +240,7 @@ export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
       status: "idle",
       errorMessage: null,
       limitNotice: null,
+      ...emptyQueueState,
     });
   },
 }));

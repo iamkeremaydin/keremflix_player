@@ -12,18 +12,33 @@ interface FileStore {
   subtitleTracks: SubtitleTrack[];
   playbackSource: PlaybackSource;
 
+  trackTitle: string | null;
+  trackArtist: string | null;
+  trackAlbum: string | null;
+  coverObjectUrl: string | null;
+
   setFile: (
     file: File,
     blobUrl: string,
     opts?: { playbackSource?: PlaybackSource }
   ) => void;
+  setTrackDisplay: (partial: {
+    trackTitle?: string | null;
+    trackArtist?: string | null;
+    trackAlbum?: string | null;
+    coverObjectUrl?: string | null;
+  }) => void;
   addSubtitleTrack: (track: SubtitleTrack) => void;
   setActiveSubtitleTrack: (id: string | null) => void;
   removeSubtitleTrack: (id: string) => void;
   clearFile: () => void;
 }
 
-export const useFileStore = create<FileStore>((set) => ({
+function revokeCover(url: string | null) {
+  if (url) URL.revokeObjectURL(url);
+}
+
+export const useFileStore = create<FileStore>((set, get) => ({
   file: null,
   blobUrl: null,
   fileName: "",
@@ -31,8 +46,13 @@ export const useFileStore = create<FileStore>((set) => ({
   extension: "",
   subtitleTracks: [],
   playbackSource: "main",
+  trackTitle: null,
+  trackArtist: null,
+  trackAlbum: null,
+  coverObjectUrl: null,
 
-  setFile: (file, blobUrl, opts) =>
+  setFile: (file, blobUrl, opts) => {
+    revokeCover(get().coverObjectUrl);
     set({
       file,
       blobUrl,
@@ -41,6 +61,28 @@ export const useFileStore = create<FileStore>((set) => ({
       extension: file.name.split(".").pop()?.toLowerCase() ?? "",
       subtitleTracks: [],
       playbackSource: opts?.playbackSource ?? "main",
+      trackTitle: null,
+      trackArtist: null,
+      trackAlbum: null,
+      coverObjectUrl: null,
+    });
+  },
+
+  setTrackDisplay: (partial) =>
+    set((s) => {
+      const nextCover = partial.coverObjectUrl !== undefined ? partial.coverObjectUrl : s.coverObjectUrl;
+      if (
+        partial.coverObjectUrl !== undefined &&
+        partial.coverObjectUrl !== s.coverObjectUrl
+      ) {
+        revokeCover(s.coverObjectUrl);
+      }
+      return {
+        trackTitle: partial.trackTitle !== undefined ? partial.trackTitle : s.trackTitle,
+        trackArtist: partial.trackArtist !== undefined ? partial.trackArtist : s.trackArtist,
+        trackAlbum: partial.trackAlbum !== undefined ? partial.trackAlbum : s.trackAlbum,
+        coverObjectUrl: nextCover,
+      };
     }),
 
   addSubtitleTrack: (track) =>
@@ -61,7 +103,8 @@ export const useFileStore = create<FileStore>((set) => ({
       subtitleTracks: state.subtitleTracks.filter((t) => t.id !== id),
     })),
 
-  clearFile: () =>
+  clearFile: () => {
+    revokeCover(get().coverObjectUrl);
     set({
       file: null,
       blobUrl: null,
@@ -70,5 +113,10 @@ export const useFileStore = create<FileStore>((set) => ({
       extension: "",
       subtitleTracks: [],
       playbackSource: "main",
-    }),
+      trackTitle: null,
+      trackArtist: null,
+      trackAlbum: null,
+      coverObjectUrl: null,
+    });
+  },
 }));

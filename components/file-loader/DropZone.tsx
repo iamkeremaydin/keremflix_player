@@ -4,7 +4,10 @@ import { useRef, useCallback } from "react";
 import { useFileLoader } from "@/hooks/useFileLoader";
 import { usePlayerVideoBinding } from "@/hooks/usePlayer";
 import { RecentlyPlayed } from "@/components/file-loader/RecentlyPlayed";
+import { BottomMiniPlayer } from "@/components/player/BottomMiniPlayer";
+import { HiddenPlaylistVideo } from "@/components/player/HiddenPlaylistVideo";
 import { MediaPlaylistPanel } from "@/components/player/MediaPlaylistPanel";
+import { useFileStore } from "@/store/file-store";
 import { usePlaylistStore } from "@/store/playlist-store";
 import type { PlayerError } from "@/lib/types";
 import { getCodecSuggestion } from "@/lib/format-support";
@@ -50,6 +53,8 @@ export function DropZone() {
   usePlayerVideoBinding(playlistVideoRef);
   const togglePlaylistPanel = usePlaylistStore((s) => s.togglePlaylistPanel);
   const playlistOpen = usePlaylistStore((s) => s.playlistPanelOpen);
+  const playlistPlayback =
+    useFileStore((s) => s.playbackSource === "playlist" && Boolean(s.blobUrl));
   const {
     isDraggingOver,
     loadError,
@@ -110,7 +115,10 @@ export function DropZone() {
 
   return (
     <div
-      className="flex flex-col items-center justify-center min-h-screen bg-black px-6 select-none"
+      className={[
+        "flex flex-col items-center justify-center min-h-screen bg-black px-6 select-none",
+        playlistPlayback ? "pb-[var(--mini-player-height)]" : "",
+      ].join(" ")}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
@@ -220,6 +228,8 @@ export function DropZone() {
       />
 
       {/* Fixed overlay — does not affect centered layout */}
+      <HiddenPlaylistVideo videoRef={playlistVideoRef} />
+      <BottomMiniPlayer videoRef={playlistVideoRef} />
       <MediaPlaylistPanel playlistVideoRef={playlistVideoRef} />
     </div>
   );

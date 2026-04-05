@@ -16,9 +16,11 @@ function formatTime(s: number) {
 interface Props {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   thumbnails?: Map<number, ImageBitmap>;
+  /** Larger vertical hit area and thumb (e.g. bottom mini-player) */
+  comfortable?: boolean;
 }
 
-export const SeekBar = memo(function SeekBar({ videoRef, thumbnails }: Props) {
+export const SeekBar = memo(function SeekBar({ videoRef, thumbnails, comfortable }: Props) {
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
   const bufferedRanges = usePlayerStore((s) => s.bufferedRanges);
@@ -77,12 +79,20 @@ export const SeekBar = memo(function SeekBar({ videoRef, thumbnails }: Props) {
   return (
     <div
       ref={trackRef}
-      className="relative w-full h-5 flex items-center group"
+      className={[
+        "relative w-full flex items-center group",
+        comfortable ? "h-12" : "h-5",
+      ].join(" ")}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >
       {/* Track background */}
-      <div className="absolute inset-x-0 h-1 group-hover:h-1.5 transition-all duration-150 rounded-full bg-white/20 overflow-hidden">
+      <div
+        className={[
+          "absolute inset-x-0 top-1/2 -translate-y-1/2 transition-all duration-150 rounded-full bg-white/20 overflow-hidden",
+          comfortable ? "h-2 group-hover:h-2.5" : "h-1 group-hover:h-1.5",
+        ].join(" ")}
+      >
         {/* Buffered ranges */}
         {bufferedRanges.map((range, i) => {
           const left = duration > 0 ? (range.start / duration) * 100 : 0;
@@ -151,7 +161,10 @@ export const SeekBar = memo(function SeekBar({ videoRef, thumbnails }: Props) {
         step={0.1}
         value={currentTime}
         onChange={onSeek}
-        className="seek-input absolute inset-0 opacity-0 cursor-pointer"
+        className={[
+          "seek-input absolute inset-0 z-10 m-0 h-full w-full cursor-pointer p-0",
+          comfortable ? "seek-input-comfortable" : "opacity-0",
+        ].join(" ")}
         aria-label="Seek"
       />
     </div>

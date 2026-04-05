@@ -4,6 +4,7 @@
   --player-accent: #e50914;
   --player-accent-hover: #f40612;
   --controls-height: 56px;
+  --mini-player-height: 118px;
   --gradient-bottom: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
   --gradient-top: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
 }
@@ -33,7 +34,7 @@ body {
   transition: height 0.15s ease;
 }
 
-.seek-input:hover {
+.seek-input:hover:not(.seek-input-comfortable) {
   height: 6px;
 }
 
@@ -56,7 +57,66 @@ body {
   opacity: 1;
 }
 
-.seek-input::-moz-range-thumb {
+/* Comfortable: thin invisible native track (matches Tailwind h-2) + 16px thumb; input fills h-12 for hit area */
+.seek-input-comfortable {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  line-height: 0;
+  font-size: 0;
+  transition: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.seek-input-comfortable::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 0.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+}
+
+.seek-input-comfortable::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  /* Center 16px thumb on 0.5rem (8px) track in WebKit */
+  margin-top: calc((0.5rem - 16px) / 2);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  opacity: 1;
+}
+
+.seek-input-comfortable::-moz-range-track {
+  width: 100%;
+  height: 0.5rem;
+  background: transparent;
+  border-radius: 9999px;
+  border: none;
+}
+
+.seek-input-comfortable::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.seek-input:not(.seek-input-comfortable)::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;

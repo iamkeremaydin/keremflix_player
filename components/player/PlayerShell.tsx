@@ -18,6 +18,8 @@ import { usePlayerStore } from "@/store/player-store";
 import { togglePlay } from "@/modules/player/engine";
 import { THUMBNAIL_INTERVAL, THUMBNAIL_MAX_COUNT } from "@/lib/constants";
 import { useFileStore } from "@/store/file-store";
+import { BottomMiniPlayer } from "./BottomMiniPlayer";
+import { HiddenPlaylistVideo } from "./HiddenPlaylistVideo";
 import { MediaPlaylistPanel } from "./MediaPlaylistPanel";
 import { SUPPORTED_VIDEO_EXTENSIONS } from "@/lib/constants";
 
@@ -156,7 +158,13 @@ export function PlayerShell() {
         />
       )}
 
-      {!error && <MediaPlaylistPanel playlistVideoRef={videoRef} />}
+      {!error && (
+        <>
+          <HiddenPlaylistVideo videoRef={videoRef} />
+          <BottomMiniPlayer videoRef={videoRef} />
+          <MediaPlaylistPanel playlistVideoRef={videoRef} />
+        </>
+      )}
     </div>
   );
 }
